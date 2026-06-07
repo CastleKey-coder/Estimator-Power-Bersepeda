@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Estimator Power Bersepeda</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <div class="container">
+    <section class="hero">
+      <div class="hero-card glass">
+        <div class="badge">🚴 Estimator Power Bersepeda</div>
+        <h1>Hitung estimasi watt tanpa power meter.</h1>
+        <p class="lead">Masukkan data ride, berat, posisi bersepeda, tanjakan, permukaan jalan, angin, dan efisiensi
+          drivetrain. Aplikasi akan menghitung estimasi power serta breakdown komponen hambatan.</p>
+      </div>
+    </section>
+
+    <main class="layout">
+      <section class="form-card glass">
+        <div class="section-title">
+          <h2>Input Data Ride</h2>
+          <button class="secondary" onclick="resetForm()">Reset</button>
+        </div>
+
+        <div class="grid grid-3">
+          <div>
+            <label for="distance">Jarak ride (km)</label>
+            <input id="distance" type="number" step="0.01" value="0" />
+          </div>
+          <div>
+            <label for="time">Moving time (hh:mm:ss)</label>
+            <input id="time" type="text" value="0:00:00" />
+          </div>
+          <div>
+            <label for="speed">Kecepatan rata-rata (km/jam)</label>
+            <input id="speed" type="number" step="0.01" value="0" />
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="secondary" onclick="calculateSpeedFromDistanceTime()">Hitung Speed dari Jarak & Waktu</button>
+        </div>
+
+        <div class="split-line"></div>
+
+        <div class="grid">
+          <div>
+            <label for="riderMass">Berat badan pesepeda (kg)</label>
+            <input id="riderMass" type="number" step="0.1" value="0" />
+          </div>
+          <div>
+            <label for="bikeMass">Berat sepeda + perlengkapan (kg)</label>
+            <input id="bikeMass" type="number" step="0.1" value="0" />
+          </div>
+          <div>
+            <label for="elevGain">Elevation gain (meter)</label>
+            <input id="elevGain" type="number" step="1" value="0" />
+            <div class="hint">Untuk estimasi rata-rata route, grade bisa dihitung dari elev gain/jarak. Ini hanya
+              pendekatan kasar.</div>
+          </div>
+          <div>
+            <label for="grade">Kemiringan / grade rata-rata (%)</label>
+            <input id="grade" type="number" step="0.01" value="0" />
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="secondary" onclick="calculateGradeFromElevation()">Hitung Grade dari Elev Gain</button>
+        </div>
+
+        <div class="split-line"></div>
+
+        <div class="section-title" style="margin-top: 0;">
+          <h3>Data Gear & Ukuran Sepeda</h3>
+        </div>
+
+        <div class="grid grid-3">
+          <div>
+            <label for="gearText">Gear yang digunakan</label>
+            <input id="gearText" type="text" value="48/15" placeholder="Contoh: 48/15" onchange="applyGearText()" />
+            <div class="hint">Format bebas, misalnya 52/15. Nilai ini akan dipakai sebagai catatan dan bisa mengisi
+              chainring/cog.</div>
+          </div>
+          <div>
+            <label for="chainring">Chainring depan (T)</label>
+            <input id="chainring" type="number" step="1" value="48" />
+          </div>
+          <div>
+            <label for="cog">Cog belakang (T)</label>
+            <input id="cog" type="number" step="1" value="15" />
+          </div>
+          <div>
+            <label for="bikeFramePreset">Ukuran frame sepeda</label>
+            <select id="bikeFramePreset" onchange="applyFramePreset()">
+              <option value="49">S / 49 cm</option>
+              <option value="52" selected>M / 52 cm</option>
+              <option value="54">L / 54 cm</option>
+              <option value="56">XL / 56 cm</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+          <div>
+            <label for="frameSizeCm">Frame size custom (cm)</label>
+            <input id="frameSizeCm" type="number" step="0.5" value="52" />
+            <div class="hint">Ukuran frame tidak mengubah watt secara langsung, tapi berguna sebagai catatan setup
+              sepeda.</div>
+          </div>
+          <div>
+            <label for="wheelSizePreset">Ukuran roda/ban</label>
+            <select id="wheelSizePreset" onchange="applyWheelSizePreset()">
+              <option value="2.096">700×23c</option>
+              <option value="2.105" selected>700×25c</option>
+              <option value="2.136">700×28c</option>
+              <option value="2.155">700×32c</option>
+              <option value="2.070">650×25c</option>
+              <option value="1.952">26×1.50</option>
+              <option value="2.075">26×1.95</option>
+              <option value="2.170">27.5×2.1</option>
+              <option value="2.288">29×2.1</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+          <div>
+            <label for="wheelCircumference">Keliling roda/ban (meter)</label>
+            <input id="wheelCircumference" type="number" step="0.001" value="2.105" />
+            <div class="hint">Dipakai untuk menghitung rollout dan cadence estimasi dari rasio gear.</div>
+          </div>
+        </div>
+
+        <div class="split-line"></div>
+
+        <div class="grid">
+          <div>
+            <label for="positionPreset">Posisi bersepeda</label>
+            <select id="positionPreset" onchange="applyPositionPreset()">
+              <option value="0.60" selected>Upright / santai (CdA 0.60)</option>
+              <option value="0.40">Road bike hoods santai (CdA 0.40)</option>
+              <option value="0.32">Road bike hoods cukup aero (CdA 0.32)</option>
+              <option value="0.28">Drops (CdA 0.28)</option>
+              <option value="0.23">Aero/TT position (CdA 0.23)</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+          <div>
+            <label for="cda">CdA / drag area (m²)</label>
+            <input id="cda" type="number" step="0.01" value="0.32" />
+            <div class="hint">Semakin kecil CdA, semakin aerodinamis.</div>
+          </div>
+          <div>
+            <label for="surfacePreset">Permukaan jalan</label>
+            <select id="surfacePreset" onchange="applySurfacePreset()">
+              <option value="0.0035" selected>Aspal sangat halus (Crr 0.0035)</option>
+              <option value="0.005">Aspal normal (Crr 0.005)</option>
+              <option value="0.007">Aspal kasar (Crr 0.007)</option>
+              <option value="0.012">Gravel ringan (Crr 0.012)</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+          <div>
+            <label for="crr">Crr / rolling resistance</label>
+            <input id="crr" type="number" step="0.0001" value="0.005" />
+          </div>
+        </div>
+
+        <div class="split-line"></div>
+
+        <div class="grid grid-3">
+          <div>
+            <label for="headwind">Angin depan (+) / belakang (-), km/jam</label>
+            <input id="headwind" type="number" step="0.1" value="0" />
+            <div class="hint">Contoh: headwind 10 = isi 10. Tailwind 10 = isi -10.</div>
+          </div>
+          <div>
+            <label for="temp">Suhu udara (°C)</label>
+            <input id="temp" type="number" step="0.1" value="0" />
+          </div>
+          <div>
+            <label for="altitude">Ketinggian lokasi (m dpl)</label>
+            <input id="altitude" type="number" step="1" value="0" />
+          </div>
+          <div>
+            <label for="efficiency">Efisiensi drivetrain (%)</label>
+            <input id="efficiency" type="number" step="0.1" value="0" />
+          </div>
+          <div>
+            <label for="startSpeed">Akselerasi: speed awal (km/jam)</label>
+            <input id="startSpeed" type="number" step="0.1" value="0" />
+          </div>
+          <div>
+            <label for="endSpeed">Akselerasi: speed akhir (km/jam)</label>
+            <input id="endSpeed" type="number" step="0.1" value="0" />
+          </div>
+          <div>
+            <label for="accelTime">Durasi akselerasi (detik)</label>
+            <input id="accelTime" type="number" step="0.1" value="0" />
+            <div class="hint">Biarkan 0 untuk estimasi steady-state/avg ride.</div>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button onclick="calculatePower()">Hitung Estimasi Power</button>
+          <button class="warning" onclick="copyResult()">Salin Hasil</button>
+          <button class="secondary" onclick="window.print()">Cetak / Simpan PDF</button>
+        </div>
+
+        <div class="accordion">
+          <details>
+            <summary>Data yang dibutuhkan untuk menghitung estimasi power</summary>
+            <ul>
+              <li>Berat badan pesepeda dan berat sepeda/perlengkapan.</li>
+              <li>Kecepatan rata-rata, atau jarak + moving time.</li>
+              <li>Kemiringan jalan/grade atau data elev gain sebagai pendekatan.</li>
+              <li>CdA/posisi tubuh karena hambatan angin sangat berpengaruh.</li>
+              <li>Crr/permukaan jalan dan ban karena menentukan rolling resistance.</li>
+              <li>Angin depan/belakang, suhu, dan ketinggian untuk memperkirakan hambatan udara.</li>
+              <li>Efisiensi drivetrain untuk mengubah power di roda menjadi estimasi power di pedal.</li>
+              <li>Gear yang digunakan, seperti chainring/cog, untuk menghitung gear ratio, rollout, cadence, dan skid
+                patches.</li>
+              <li>Ukuran sepeda, frame, serta ukuran roda/ban untuk mencatat setup sepeda dan menghitung keliling roda.
+              </li>
+            </ul>
+          </details>
+
+          <details>
+            <summary>Rumus yang dipakai aplikasi</summary>
+            <p>Aplikasi memakai pendekatan fisika sederhana: total power = power aerodinamika + rolling resistance +
+              tanjakan + akselerasi, lalu dikoreksi dengan efisiensi drivetrain.</p>
+            <p><code>P_aero = 0.5 × ρ × CdA × v_air² × v_ground</code></p>
+            <p><code>P_roll = Crr × m × g × cos(θ) × v_ground</code></p>
+            <p><code>P_gravity = m × g × sin(θ) × v_ground</code></p>
+            <p><code>P_pedal = P_roda / efisiensi drivetrain</code></p>
+          </details>
+
+          <details>
+            <summary>Efisiensi drivetrain</summary>
+            <p>Efisiensi drivetrain di aplikasi itu dihitung sebagai persentase tenaga dari pedal yang berhasil sampai
+              ke roda
+              belakang. <br>
+              Untuk fixed gear, drivetrain biasanya lebih sederhana daripada road bike geared/derailleur karena jalurnya
+              langsung: chainring → rantai → cog belakang. Tapi efisiensinya tetap dipengaruhi oleh beberapa hal:
+            <ul>
+              <li>Kondisi rantai</li>
+              Rantai bersih dan terlumasi akan lebih efisien daripada rantai kering, kotor, atau berkarat.
+              <li>Ketegangan rantai fixed gear</li>
+              Rantai yang terlalu kencang bisa menambah gesekan. Rantai yang terlalu kendor juga tidak ideal dan bisa
+              berbahaya.
+              <li>Chainline</li>
+              Posisi chainring dan cog harus lurus. Chainline yang miring bisa menambah gesekan.
+              <li>Ukuran chainring dan cog</li>
+              Penelitian tentang drivetrain track/fixed gear menunjukkan bahwa ukuran sprocket, tegangan rantai,
+              chainline, dan
+              pelumasan bisa memengaruhi efisiensi drivetrain.
+              <li>Kebersihan dan pelumasan</li>
+              Secara umum, chain drive sepeda bisa sangat efisien. Uji laboratorium Johns Hopkins pernah menemukan
+              efisiensi terbaik
+              sampai 98,6%, tetapi kondisi buruk bisa jauh lebih rendah.
+            </ul>
+            <p>Untuk aplikasi yang saya buat, nilai default 97% adalah asumsi aman untuk fixed gear dengan kondisi
+              normal: <br>
+              Kondisi fixed gear Saran input <br>
+            <ul>
+              <li>Rantai bersih, lube bagus, chainline lurus 97–98%</li>
+              <li>Pemakaian harian normal 96–97%</li>
+              <li>Rantai agak kotor/kering 94–96%</li>
+              <li>Rantai sangat kotor, aus, atau terlalu kencang 90–94%</li>
+            </ul>
+            </p>
+          </details>
+
+          <details>
+            <summary>Catatan akurasi</summary>
+            <p>Hasil ini adalah estimasi, bukan pengganti power meter. Data yang paling sensitif biasanya CdA, angin,
+              posisi badan, dan grade. Untuk rute rolling atau banyak stop-and-go, hasil rata-rata bisa berbeda dari
+              power meter asli.</p>
+          </details>
+
+        </div>
+      </section>
+
+      <aside class="result-card glass">
+        <div class="section-title">
+          <h3>Hasil Estimasi</h3>
+        </div>
+
+        <div class="big-number"><span id="totalPower">0</span><small> watt</small></div>
+        <div class="note" id="interpretation">Isi data lalu klik “Hitung Estimasi Power”.</div>
+
+        <div class="kpi-grid">
+          <div class="kpi"><span>W/kg</span><strong id="wkg">0.00</strong></div>
+          <div class="kpi"><span>Wheel power</span><strong id="wheelPower">0 W</strong></div>
+          <div class="kpi"><span>Drivetrain loss</span><strong id="lossPower">0 W</strong></div>
+          <div class="kpi"><span>Air density</span><strong id="airDensity">0.000</strong></div>
+          <div class="kpi"><span>Mechanical work</span><strong id="mechanicalWork">0 kJ</strong></div>
+          <div class="kpi"><span>Metabolic est.</span><strong id="metabolicKcal">0 kcal</strong></div>
+        </div>
+
+        <div class="section-title" style="margin-top: 18px;">
+          <h3>Gear & Ukuran Sepeda</h3>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi"><span>Gear digunakan</span><strong id="gearUsedOut" class="compact">52/15</strong></div>
+          <div class="kpi"><span>Gear ratio</span><strong id="gearRatioOut">0.00</strong></div>
+          <div class="kpi"><span>Rollout</span><strong id="rolloutOut">0.00 m</strong></div>
+          <div class="kpi"><span>Cadence est.</span><strong id="cadenceOut">0 rpm</strong></div>
+          <div class="kpi"><span>Skid patches</span><strong id="skidPatchesOut">0</strong></div>
+          <div class="kpi"><span>Frame / roda</span><strong id="bikeSetupOut" class="compact">-</strong></div>
+        </div>
+
+        <div class="section-title" style="margin-top: 18px;">
+          <h3>Breakdown Power</h3>
+        </div>
+        <div class="bar-list">
+          <div class="bar-item">
+            <div class="bar-head"><span>Aerodinamika</span><strong id="aeroVal">0 W</strong></div>
+            <div class="bar-track">
+              <div id="aeroBar" class="bar-fill"></div>
+            </div>
+          </div>
+          <div class="bar-item">
+            <div class="bar-head"><span>Rolling resistance</span><strong id="rollVal">0 W</strong></div>
+            <div class="bar-track">
+              <div id="rollBar" class="bar-fill"></div>
+            </div>
+          </div>
+          <div class="bar-item">
+            <div class="bar-head"><span>Tanjakan / gravitasi</span><strong id="gravVal">0 W</strong></div>
+            <div class="bar-track">
+              <div id="gravBar" class="bar-fill"></div>
+            </div>
+          </div>
+          <div class="bar-item">
+            <div class="bar-head"><span>Akselerasi</span><strong id="accelVal">0 W</strong></div>
+            <div class="bar-track">
+              <div id="accelBar" class="bar-fill"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="split-line"></div>
+        <div class="note" id="resultText">Belum ada hasil yang disalin.</div>
+      </aside>
+    </main>
+
+    <div class="footer">Estimator ini dibuat untuk analisis latihan bersepeda. Untuk hasil paling akurat, gunakan power
+      meter dan data angin/grade yang lebih detail.</div>
+  </div>
+  <script src="script.js"></script>
+</body>
+
+</html>
