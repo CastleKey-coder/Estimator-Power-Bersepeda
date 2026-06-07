@@ -230,4 +230,3 @@ CATATAN PENTING
 2. Hasil sangat dipengaruhi oleh CdA, angin, grade, berat total, dan Crr.
 3. Gear fixed gear tidak langsung mengubah kebutuhan power saat steady speed, tetapi memengaruhi cadence, rollout, dan rasa berat kayuhan.
 4. Untuk hasil lebih mendekati kondisi nyata, gunakan data yang akurat dari GPS, barometer/elevation, dan kondisi angin sebenarnya.
-5. Perhitungan zona power dan FTP sudah dihapus agar aplikasi fokus pada estimasi watt, komponen hambatan, dan data gear.
